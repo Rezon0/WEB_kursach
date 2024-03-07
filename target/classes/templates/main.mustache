@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div>
+        <form action="/logout" method="post">
+            <input type="hidden" name="_csrf" value = "{{_csrf.token}}" />
+            <input type="submit" value="Sign Out"/>
+        </form>
+    </div>
+
+    <div>
+        <form method="post">
+            <input type="text" name="text" placeholder="Enter message">
+            <input type="text" name="tag" placeholder="Tag">
+            <input type="hidden" name="_csrf" value = "{{_csrf.token}}" />
+            <button type="submit">Add</button>
+        </form>
+    </div>
+
+    <div>List message</div>
+    <form method="post" action="filter">
+        <input type="text" name="filter" placeholder="Enter tag">
+        <input type="hidden" name="_csrf" value = "{{_csrf.token}}" />
+        <button type="submit">Search</button>
+    </form>
+    {{#messages}}
+        <div>
+            <b>{{id}}</b>
+            <span>{{text}}</span>
+            <i>{{tag}}</i>
+        </div>
+
+    {{/messages}}
+</body>
+</html>

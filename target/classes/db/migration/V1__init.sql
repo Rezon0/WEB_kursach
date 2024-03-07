@@ -1,0 +1,65 @@
+-- CREATE TABLE users
+-- (
+--     username VARCHAR(50)  NOT NULL,
+--     password VARCHAR(100) NOT NULL,
+--     enabled  boolean      NOT NULL,
+--     firstname varchar(50) not null,
+--     lastname varchar(50) not null,
+--     patronymic varchar(50) null,
+--     gender char(1) not null,
+--     phone varchar(20) not null unique,
+--     email varchar(100) null unique,
+--     description text null,
+--     PRIMARY KEY (username)
+-- );
+--
+-- -- INSERT INTO users(username, password, enabled, firstname, lastname, patronymic, gender, phone, email, description)
+-- -- VALUES ('admin',
+-- --         '$2a$10$dYJ9JcdxtCIc6jnJYNTDFOs1tdPt1te25Gf5JKIEc7uRBvJiSk6JO',
+-- --         true,
+-- --         'Anton',
+-- --         'Shutov',
+-- --         'Alekseevich',
+-- --         'M',
+-- --         '+7(922)663-90-98',
+-- --         'ASHICH@mail.ru',
+-- --         'I like to eat a lot');
+--
+-- CREATE TABLE authorities
+-- (
+--     id serial primary key,
+--     username  varchar(50) NOT NULL,
+--     authority varchar(50) NOT NULL,
+--
+--     FOREIGN KEY (username) REFERENCES users (username)
+-- );
+-- --
+-- -- INSERT INTO authorities(id, username, authority)
+-- -- VALUES (default, 'admin', 'ROLE_ADMIN');
+--
+-- create table careProduction
+-- (
+--     id serial primary key,
+--     name varchar(60) not null,
+--     price int not null
+-- );
+--
+-- create table tattooCatalog
+-- (
+--     id serial primary key,
+--     name varchar(60) not null,
+--     price int not null,
+--     sizeX int not null,
+--     sizeY int not null,
+--
+--     careProduction_id int not null references careProduction(id)
+-- );
+--
+-- create table record
+-- (
+--     id serial primary key,
+--     dateTime timestamp not null,
+--     place varchar(30) not null,
+--
+--     user_id VARCHAR(50) not null references users(username)
+-- );
