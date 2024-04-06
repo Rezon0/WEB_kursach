@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Date;
 import java.util.List;
 
 
@@ -31,16 +32,9 @@ public class User {
 
     private String email;
 
-    private String description;
-
     private String url;
-    public String getUrl() {
-        return url;
-    }
 
-    public void setUrl(String url) {
-        this.url = url;
-    }
+    private Date birthday;
 
     public String getUsername() {
         return username;
@@ -58,7 +52,7 @@ public class User {
         this.password = password;
     }
 
-    public boolean getEnabled() {
+    public boolean isEnabled() {
         return enabled;
     }
 
@@ -114,12 +108,12 @@ public class User {
         this.email = email;
     }
 
-    public String getDescription() {
-        return description;
+    public String getUrl() {
+        return url;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public Authority getAuthority() {
@@ -130,28 +124,27 @@ public class User {
         this.authority = authority;
     }
 
-    public List<Records> getRecordsListForClient() {
-        return recordsListForClient;
-    }
-
-    public void setRecordsListForClient(List<Records> recordsListForClient) {
-        this.recordsListForClient = recordsListForClient;
-    }
-
-    public List<Records> getRecordsListForMaster() {
-        return recordsListForMaster;
-    }
-
-    public void setRecordsListForMaster(List<Records> recordsListForMaster) {
-        this.recordsListForMaster = recordsListForMaster;
-    }
 
     @OneToOne(mappedBy = "userRole", cascade = CascadeType.ALL)
     private Authority authority;
 
-    @OneToMany(mappedBy = "user")
-    private List<Records> recordsListForClient;
+    @ManyToOne
+    @JoinColumn(name = "schoolClass_id")
+    private SchoolClass schoolClass;
 
-    @OneToMany(mappedBy = "master")
-    private List<Records> recordsListForMaster;
+    public Date getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthday = birthday;
+    }
+
+    public SchoolClass getSchoolClass() {
+        return schoolClass;
+    }
+
+    public void setSchoolClass(SchoolClass schoolClass) {
+        this.schoolClass = schoolClass;
+    }
 }

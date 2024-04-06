@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Администратор</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header, #footer {
+            background-color: #333;
+            color: white;
+            font-size: 18px;
+            padding: 10px;
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #footer img {
+            height: 30px;
+            margin-right: 10px;
+        }
+
+        #content {
+            margin-top: 60px;
+            padding: 20px;
+        }
+        #user-info img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        #user-info p {
+            margin-bottom: 10px;
+        }
+
+        form {
+            display: inline-block;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            border: 1px solid #333;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <form th:action="@{/logout}" method="post">
+        <input type="submit" value="Выйти"/>
+    </form>
+</header>
+
+<div id="content">
+    <div class="contact-info" id="school">
+        <p th:text="'Учебное заведение: МБОУ СОШ №31 г.Кирова'"></p>
+    </div>
+    <div class="contact-info" id="surname">
+        <img th:src="${url}" width="64" height="64" alt="Наташа, мы всё уронили">
+        <p th:text="'Фамилия: ' + ${lastname}"></p>
+    </div>
+    <div class="contact-info" id="name">
+        <p th:text="'Имя: ' + ${lastname}"></p>
+    </div>
+    <div class="contact-info" id="patronymic">
+        <p th:text="'Отчество: ' + ${patronymic}"></p>
+    </div>
+    <div class="contact-info" id="phone">
+        <p th:text="'Номер телефона: ' + ${phone}"></p>
+    </div>
+    <div class="contact-info" id="email">
+        <p th:text="'Email: ' + ${email}"></p>
+    </div>
+
+    <form th:action="@{/adminForm/adminVaccinationCalendar}" method="post">
+        <button id="idButtonVaccinationCalendar">Календарь прививок</button>
+    </form>
+</div>
+
+<footer id="footer">
+    <p>Адрес: ул. Московская, д. 39, г. Киров</p>
+    <p>Телефон: +7 (800) 555-35-35</p>
+    <p>Почта: asd22c@bk.ru</p>
+    <p>Название компании: Алексей Интертеймент</p>
+    <p>ИНН: 1234567890</p>
+    <img th:src="@{/logo.png}" alt="Логотип компании">
+</footer>
+</body>
+</html>

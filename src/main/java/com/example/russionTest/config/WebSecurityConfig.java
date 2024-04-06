@@ -24,10 +24,9 @@ public class WebSecurityConfig {
         http
 
                 .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/registrationUser/**").permitAll()
                         //.requestMatchers("/successfulRegistrationUser").permitAll()
-                        .requestMatchers("/admin_form/**").hasRole("ADMIN")
-                        .requestMatchers("/client_menu/**").hasRole("USER")
+                        .requestMatchers("/adminForm/**").hasRole("ADMIN")
+                        .requestMatchers("/studentForm/**").hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .formLogin((form) -> form
@@ -39,25 +38,6 @@ public class WebSecurityConfig {
 
         return http.build();
     }
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .authorizeHttpRequests((requests) -> requests
-//                        .requestMatchers("/admin_form/**").hasRole("ADMIN")
-//                        .requestMatchers("/client_menu/**").hasRole("USER")
-//                        .anyRequest().authenticated()
-//                )
-//                .formLogin((form) -> form
-//                        .loginPage("/login")
-//                        .loginProcessingUrl("/authenticateTheUser")
-//                        .permitAll()
-//                )
-//                .logout((logout) -> logout
-//                        .logoutSuccessUrl("/login").permitAll()).build();
-//
-//        return http.build();
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -76,10 +56,3 @@ public class WebSecurityConfig {
         };
     }
 }
-
-/*
-@Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception{
-        auth.jdbcAuthentication().dataSource()
-    }
- */

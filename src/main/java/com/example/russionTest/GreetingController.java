@@ -1,110 +1,85 @@
 package com.example.russionTest;
 
-import com.example.russionTest.Services.TattooService;
-import com.example.russionTest.Services.UserService;
+import com.example.russionTest.Services.*;
 import com.example.russionTest.domain.*;
-import com.example.russionTest.repos.MessageRepo;
-import com.example.russionTest.repos.TattooRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.util.ResourceUtils;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.util.Elements;
 import javax.sql.DataSource;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 @Controller
 public class GreetingController {
-
-    private final JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    public GreetingController(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-    private UserDetailsService userDetailsService;
-
-    @Autowired
-    private TattooService tattooService;
-
-    private TattooRepository tattooRepository;
-
     private UserService userService;
+    private VacCertService vacCertService;
+    private VaccinationService vaccinationService;
+    private VacAndCertService vacAndCertService;
+    private SchoolClassService schoolClassService;
+    private String lastnameInput;
+    private String firstnameInput;
+    private String patronymicInput;
+    private String calendarInput;
 
-    private static final String URL = "jdbc:postgresql://localhost:5432/testdb";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "123";
+    String selectNameVaccination;
+    String facticalVaccination;
+    String reaction;
 
-    private void addUserToDB(User user, Authority authority, String role){
+    private User tempUser;
 
-        // ТУТ ШИФРОВАНИЕ ПАРОЛЯ В БД
-
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // ТУТ ВСТАВКА В БД ЮЗЕРА
-
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
-            String query = "INSERT INTO users VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, user.getUsername());
-                preparedStatement.setString(2, user.getDescription());
-                preparedStatement.setString(3, user.getEmail());
-                preparedStatement.setBoolean(4, user.getEnabled());
-                preparedStatement.setString(5, user.getFirstname());
-                preparedStatement.setString(6, user.getGender());
-                preparedStatement.setString(7, user.getLastname());
-                preparedStatement.setString(8, user.getPassword());
-                preparedStatement.setString(9, user.getPatronymic());
-                preparedStatement.setString(10, user.getPhone());
-                preparedStatement.setString(11, user.getUrl());
-                preparedStatement.executeUpdate();
-            }
-
-            // А ТУТ РОЛЕЙ
-            query = "INSERT INTO authorities VALUES (?, ?, ?)";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, authority.getId());
-                preparedStatement.setString(2, role);
-                preparedStatement.setString(3, user.getUsername());
-                preparedStatement.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    @Autowired
+    public void setSchoolClassService(SchoolClassService schoolClassService) {
+        this.schoolClassService = schoolClassService;
     }
 
-    private void addRecordToDB(Records records){
-
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
-            String query = "INSERT INTO record VALUES (?, ?, ?, ?, ?, ?)";
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, records.getId());
-                preparedStatement.setObject(2, records.getDateTime());
-                preparedStatement.setString(3, records.getPlace());
-                preparedStatement.setString(4, records.getMaster().getUsername());
-                preparedStatement.setInt(5, records.getTattooCatalog().getId());
-                preparedStatement.setString(6, records.getUser().getUsername());
-                preparedStatement.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    @Autowired
+    public void setVacAndCertService(VacAndCertService vacAndCertService) {
+        this.vacAndCertService = vacAndCertService;
     }
+
+    @Autowired
+    public void setVaccinationService(VaccinationService vaccinationService) {
+        this.vaccinationService = vaccinationService;
+    }
+
+    @Autowired
+    public void setVacCertService(VacCertService vacCertService) {
+        this.vacCertService = vacCertService;
+    }
+
 
     @Autowired
     public void setUserService(UserService userService) {
@@ -112,128 +87,13 @@ public class GreetingController {
     }
 
     @Autowired
-    private MessageRepo messageRepo;
+    private HtmlDownloader htmlDownloader;
+
 
     @GetMapping("/")
     public String greeting(Map<String, Object> model)
     {
         return "redirect:/temp";
-    }
-
-    @GetMapping("/main")
-    public String main(Map<String, Object> model) {
-        Iterable<Message> messages = messageRepo.findAll();
-        model.put("messages", messages);
-        return "main";
-    }
-
-    @PostMapping("/main")
-    public String add(@RequestParam String text,
-                      @RequestParam String tag,
-                      Map<String, Object> model,
-                      Principal principal){
-       Message message = new Message(text, tag);
-       messageRepo.save(message);
-
-       Iterable<Message> messages = messageRepo.findAll();
-       model.put("messages", messages);
-
-
-        return "main";
-    }
-
-    @PostMapping("filter")
-    public String filter(@RequestParam String filter, Map<String, Object> model){
-        Iterable<Message> messages;
-        if(filter != null && !filter.isEmpty()){
-            messages = messageRepo.findByTag(filter);
-        }else{
-            messages = messageRepo.findAll();
-        }
-
-        model.put("messages", messages);
-        return "main";
-    }
-
-
-    @PostMapping("/client_menu")
-    public String clientMenu(Map<String, Object> model, Principal principal)
-    {
-        return "client_menu";
-    }
-
-    @PostMapping("/authenticateTheUser")
-    public String authenticateUser(
-            @RequestParam("username") String username,
-            @RequestParam("password") String password,
-            Model model) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if (userDetails != null) {
-            String storedPassword = userDetails.getPassword();
-            if (password.equals(storedPassword)) {
-                model.addAttribute("username", username);
-                return "redirect:/temp";
-            }
-        }
-        return "login";
-    }
-
-    @PostMapping("/registrationUser")
-    public String registrationUser(Model model) {
-        return "redirect:/registrationUser/tempRegistration";
-    }
-
-    @GetMapping("/registrationUser/tempRegistration")
-    public String registrationTemp(Model model) {
-        model.addAttribute("user", new User());
-        return "registrationUser";
-    }
-
-
-    @PostMapping("/registrationUser/successfulRegistrationUser")
-    public String successfulRegistrationUser(Model model, User user) {
-        Authority authority;
-        user.setEnabled(true);
-        user.setUrl("/icon.png");
-        authority = new Authority();
-        authority.setAuthority("ROLE_USER");
-
-        // ТУТ КОСТЫЛЬ НА УВЕЛИЧЕНИЕ ID authority НА 1 (А-ЛЯ serial)
-
-        String QUERY = "SELECT max(id) FROM authorities";
-
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(QUERY);
-        ) {
-            while(rs.next()){
-                authority.setId(rs.getInt("max")+1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        user.setAuthority(authority);
-        authority.setUser(user);
-
-        addUserToDB(user, authority, "ROLE_USER");
-
-
-
-        return "login";
-    }
-
-
-    @GetMapping("/admin_form")
-    public String adminForm(Map<String, Object> model) {
-
-        return "admin_form";
-    }
-
-    @GetMapping("/client_menu")
-    public String clientForm(Map<String, Object> model) {
-
-        return "client_menu";
     }
 
     @GetMapping("/temp")
@@ -245,215 +105,113 @@ public class GreetingController {
             System.out.println(authority);
 
             if(authority.equals("ROLE_ADMIN")){
-                return "redirect:/admin_form";
+                return "redirect:/adminForm";
             }
             if(authority.equals("ROLE_USER")){
-                return "redirect:/client_menu";
+                return "redirect:/studentForm";
             }
         }
 
-        return "admin_form";
+        return null;
     }
 
-    @PostMapping("/client_menu/profile")
-    public String clientProfile(Model model) {
-        return "redirect:/client_menu/temp_profile";
+    @GetMapping("/studentForm")
+    public String successfulStudentLogin(Model model, Authentication authentication){
+        User user = userService.getUserByUserName(authentication.getName());
+
+        model.addAttribute("username", user.getUsername());
+        model.addAttribute("firstname", user.getFirstname());
+        model.addAttribute("lastname", user.getLastname());
+        model.addAttribute("patronymic", user.getPatronymic());
+        model.addAttribute("phone", user.getPhone());
+        model.addAttribute("email", user.getEmail());
+        model.addAttribute("url", user.getUrl());
+
+
+        lastnameInput = null;
+        firstnameInput = null;
+        patronymicInput = null;
+        calendarInput = null;
+
+        selectNameVaccination = null;
+        facticalVaccination = null;
+        reaction = null;
+
+        tempUser = null;
+
+        return "studentForm";
     }
 
-    @GetMapping("/client_menu/temp_profile")
+    @PostMapping("/studentForm/studentVaccinationCalendar")
+    public String studentVaccinationCalendar(Model model) {
+        return "redirect:/studentForm/studentVaccinationCalendar_temp";
+    }
+
+    @GetMapping("/studentForm/studentVaccinationCalendar_temp")
     public String getClientProfile(Model model, Authentication authentication) {
 
         User user = userService.getUserByUserName(authentication.getName());
 
-        model.addAttribute("username", user.getUsername());
-        model.addAttribute("firstname", user.getFirstname());
-        model.addAttribute("lastname", user.getLastname());
-        model.addAttribute("patronymic", user.getPatronymic());
-        model.addAttribute("phone", user.getPhone());
-        model.addAttribute("email", user.getEmail());
-        model.addAttribute("url", user.getUrl());
+        List<Vaccination> vacList = vaccinationService.getVaccinationsByCertifficateId(vacCertService.getVacCertByUsername(user));
 
-        return "clientProfile"; // This is the Thymeleaf template name
-    }
-
-
-
-    @PostMapping("/client_menu/view_records")
-    public String clientViewRecords(Model model) {
-        return "redirect:/client_menu/temp_view_records";
-    }
-
-    @GetMapping("client_menu/temp_view_records")
-    public String getClientRecords(Model model, Authentication authentication) {
-        String sqlQuery = "SELECT tc.url  as \"url\", tc.name as \"name\", r.date_time as \"date\", tc.price as \"price\", " +
-                          "m.lastname  as \"lastname\", m.firstname  as \"firstname\", m.patronymic  as \"patronymic\", " +
-                          "r.place as \"place\" FROM record r " +
-                          "join tattoo_catalog tc on r.tattoo_catalog_id = tc.id " +
-                          "join users u on r.username_client = u.username " +
-                          "join users m on r.username_master = m.username " +
-                          "where r.username_client = '" + authentication.getName() + "'";
-
-        List<Map<String, Object>> records = jdbcTemplate.queryForList(sqlQuery);
-
-
-        model.addAttribute("records", records);
-
-        //model.addAttribute("masters", master);
-
-        return "clientRecords";
-    }
-
-
-    @PostMapping("/client_menu/tattoo_zapis")
-    public String clientZapis(Model model) {
-        return "redirect:/client_menu/temp_tattoo_zapis";
-    }
-
-    @GetMapping("client_menu/temp_tattoo_zapis")
-    public String getAllZapis(Model model) {
-        String sqlQuery = "SELECT name, price, url FROM tattoo_catalog";
-        List<Map<String, Object>> tattoo = jdbcTemplate.queryForList(sqlQuery);
-
-        sqlQuery = "SELECT lastname, firstname, patronymic FROM users u " +
-                    "inner join authorities a on a.username = u.username " +
-                    "where a.authority = 'ROLE_ADMIN'";
-
-        List<Map<String, Object>> master = jdbcTemplate.queryForList(sqlQuery);
-
-        model.addAttribute("tattoos", tattoo);
-
-        model.addAttribute("masters", master);
-
-        return "tattoo_zapis";
-    }
-
-    public User findUserByFullName(String lastname, String firstname, String patronymic) {
-        String query = "SELECT * FROM users WHERE lastname = ? AND firstname = ? AND patronymic = ?";
+        List<VaccinationCalendar> vaccinationCalendarList = new ArrayList<>();
 
         try {
-            return jdbcTemplate.queryForObject(query, new Object[]{lastname, firstname, patronymic}, new BeanPropertyRowMapper<>(User.class));
-        } catch (Exception e) {
-            // Обработка ошибки или возврат null, если пользователя не найдено
-            return null;
-        }
-    }
-
-    public User findUserByUsername(String username) {
-        String query = "SELECT * FROM users WHERE username = ?";
-
-        try {
-            return jdbcTemplate.queryForObject(query, new Object[]{username}, new BeanPropertyRowMapper<>(User.class));
-        } catch (Exception e) {
-            // Обработка ошибки или возврат null, если пользователя не найдено
-            return null;
-        }
-    }
-
-    public TattooCatalog findTattoo(String name) {
-        String query = "SELECT * FROM tattoo_catalog WHERE name = ?";
-
-        try {
-            return jdbcTemplate.queryForObject(query, new Object[]{name}, new BeanPropertyRowMapper<>(TattooCatalog.class));
-        } catch (Exception e) {
-            // Обработка ошибки или возврат null, если пользователя не найдено
-            return null;
-        }
-    }
-
-    @PostMapping("/client_menu/successfulRecord")
-    public String successfulRecord(@RequestParam("date") LocalDateTime dateTime,
-                                   @RequestParam("tattooName") String tattooName,
-                                   @RequestParam("master_name") String masterName,
-                                   @RequestParam("place") String place,
-                                    Authentication authentication) {
-
-        //   ПРОПИСАТЬ ПОЛУЧЕНИЕ ДАННЫХ И ЗАНЕСЕНИЕ В БД
-
-        Records records = new Records();
-        records.setDateTime(dateTime);
-        records.setPlace(place);
-
-        String[] substrings = masterName.split("\\s+");
-
-        // Преобразуем массив в список
-        List<String> substringList = Arrays.asList(substrings);
+            for (Vaccination item: vacList) {
+                VaccinationCalendar vaccinationCalendar = new VaccinationCalendar();
+                vaccinationCalendar.setLastname(user.getLastname());
+                vaccinationCalendar.setFirstname(user.getFirstname());
+                vaccinationCalendar.setPatronymic(user.getPatronymic());
+                vaccinationCalendar.setBirthday(user.getBirthday().toLocalDate());
+                vaccinationCalendar.setSchoolClassName(user.getSchoolClass().getName());
+                vaccinationCalendar.setVacName(item.getName());
 
 
-        User master = findUserByFullName(substringList.get(0), substringList.get(1), substringList.get(2));
+                if (item.getInterval() != null)
+                    vaccinationCalendar.setDatePlanVaccine(user.getBirthday().toLocalDate().plus(Period.parse(item.getInterval())));
+                else
+                    vaccinationCalendar.setDatePlanVaccine(LocalDate.MIN);
 
-        User client = findUserByUsername(authentication.getName());
+//                if (vaccinationCalendar.getDatePlanVaccine().isAfter(LocalDate.now().minusDays(14)) &&
+//                        vaccinationCalendar.getDatePlanVaccine().isBefore(LocalDate.now().minusDays(7))) {
+//                    vaccinationCalendar.setHighlighted("yellowRow");
+//                } else if (vaccinationCalendar.getDatePlanVaccine().isBefore(LocalDate.now().minusDays(7))) {
+//                    vaccinationCalendar.setHighlighted("redRow");
+//                }else{
+//                    vaccinationCalendar.setHighlighted("");
+//                }
 
-        substrings = tattooName.split("\\s+");
-        substringList = Arrays.asList(substrings);
+                vaccinationCalendar.setHighlighted("");
 
-        TattooCatalog tattooCatalog = findTattoo(substringList.get(0));
+                VaccinationAndCertificate vac = vacAndCertService.getVaccinationAndCertificateByVaccinationIdAndVaccinationCertifficateId(item.getId(), vacCertService.getVacCertByUsername(user).getId());
 
+                vaccinationCalendar.setDateFactVaccine(vac.getDateVaccination().toLocalDate());
+                vaccinationCalendar.setReaction(vac.getReaction());
 
-        records.setMaster(master);
-        records.setUser(client);
-        records.setTattooCatalog(tattooCatalog);
+                vaccinationCalendarList.add(vaccinationCalendar);
 
-
-        // ТУТ КОСТЫЛЬ НА УВЕЛИЧЕНИЕ ID authority НА 1 (А-ЛЯ serial)
-
-        String QUERY = "SELECT max(id) FROM record";
-
-        try(Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(QUERY);
-        ) {
-            while(rs.next()){
-                    Integer maxId = rs.getInt(1);
-                    if (maxId != null) {
-                        records.setId(maxId + 1);
-                    } else {
-                        // Обработка случая, когда значение в колонке 'max(id)' равно null
-                        records.setId(0);
-                    }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (NullPointerException e){
+            System.out.println(e.getStackTrace());
         }
 
+        System.out.println();
 
-        addRecordToDB(records);
+        model.addAttribute("users", vaccinationCalendarList);
 
-
-
-        return "client_menu";
+       // model.addAttribute("users", user);
+        return "studentVaccinationCalendar"; // This is the Thymeleaf template name
     }
 
 
+//    @PostMapping("/adminFormPost")
+//    public String studentVaccinationCalendarPost(Model model) {
+//        return "adminForm";
+//    }
 
 
-    @PostMapping("/client_menu/tattoo_tattoo_care_products")
-    public String tattooCareProducts(Model model) {
-        return "redirect:/client_menu/temp_tattoo_tattoo_care_products";
-    }
-
-    @GetMapping("client_menu/temp_tattoo_tattoo_care_products")
-    public String getAllProducts(Model model) {
-        String sqlQuery = "SELECT name, price FROM care_production";
-        List<Map<String, Object>> resultList = jdbcTemplate.queryForList(sqlQuery);
-
-        model.addAttribute("careProductions", resultList);
-        return "tattoo_care_products";
-    }
-
-
-    @PostMapping("/admin_form")
-    public String adminFormPost(Map<String, Object> model) {
-        return "admin_form";
-    }
-
-    @PostMapping("/admin_form/profile")
-    public String adminProfile(Model model) {
-        return "redirect:/admin_form/temp_profile";
-    }
-
-    @GetMapping("/admin_form/temp_profile")
-    public String getAdminProfile(Model model, Authentication authentication) {
-
+    @GetMapping("/adminForm")
+    public String successfulAdminLogin(Model model, Authentication authentication){
         User user = userService.getUserByUserName(authentication.getName());
 
         model.addAttribute("username", user.getUsername());
@@ -464,32 +222,148 @@ public class GreetingController {
         model.addAttribute("email", user.getEmail());
         model.addAttribute("url", user.getUrl());
 
-        return "adminProfile"; // This is the Thymeleaf template name
+
+        lastnameInput = null;
+        firstnameInput = null;
+        patronymicInput = null;
+        calendarInput = null;
+
+        selectNameVaccination = null;
+        facticalVaccination = null;
+        reaction = null;
+
+        tempUser = null;
+
+
+        return "adminForm";
     }
 
-    @PostMapping("/admin_form/view_records")
-    public String adminViewRecords(Model model) {
-        return "redirect:/admin_form/temp_admin_view_records";
+    @PostMapping("/adminForm/adminVaccinationCalendar")
+    public String adminVaccinationCalendar(Model model) {
+        return "redirect:/adminForm/adminVaccinationCalendar_temp";
     }
 
-    @GetMapping("/admin_form/temp_admin_view_records")
-    public String getAdminRecords(Model model, Authentication authentication) {
-        String sqlQuery = "SELECT tc.url  as \"url\", tc.name as \"name\", r.date_time as \"date\", tc.price as \"price\", " +
-                "u.lastname  as \"lastname\", u.firstname  as \"firstname\", u.patronymic  as \"patronymic\", " +
-                "r.place as \"place\" FROM record r " +
-                "join tattoo_catalog tc on r.tattoo_catalog_id = tc.id " +
-                "join users u on r.username_client = u.username " +
-                "join users m on r.username_master = m.username " +
-                "where r.username_master = '" + authentication.getName() + "'";
-
-        List<Map<String, Object>> records = jdbcTemplate.queryForList(sqlQuery);
+    @GetMapping("/adminForm/adminVaccinationCalendar_temp")
+    public String getAdminCalendar(Model model, Authentication authentication) {
+        List<SchoolClass> schoolClass = schoolClassService.getAllSchoolClass();
+        List<Vaccination> vaccination = vaccinationService.getAllVaccinations();
+        List<VaccinationCalendar> vaccinationCalendarList = new ArrayList<>();
+        model.addAttribute("disabled", true);
 
 
-        model.addAttribute("records", records);
 
-        //model.addAttribute("masters", master);
 
-        return "adminRecords";
+    if (tempUser != null)
+    {
+        try {
+        List<Vaccination> vacList = vaccinationService.getVaccinationsByCertifficateId(vacCertService.getVacCertByUsername(tempUser));
+
+        for (Vaccination item: vacList) {
+            VaccinationCalendar vaccinationCalendar = new VaccinationCalendar();
+            vaccinationCalendar.setLastname(tempUser.getLastname());
+            vaccinationCalendar.setFirstname(tempUser.getFirstname());
+            vaccinationCalendar.setPatronymic(tempUser.getPatronymic());
+            vaccinationCalendar.setVacCertId(vacCertService.getVacCertByUsername(tempUser).getId());
+            vaccinationCalendar.setBirthday(tempUser.getBirthday().toLocalDate());
+            vaccinationCalendar.setSchoolClassName(tempUser.getSchoolClass().getName());
+            vaccinationCalendar.setVacName(item.getName());
+            if (item.getInterval() != null)
+                vaccinationCalendar.setDatePlanVaccine(tempUser.getBirthday().toLocalDate().plus(Period.parse(item.getInterval())));
+            else
+                vaccinationCalendar.setDatePlanVaccine(LocalDate.MIN);
+
+            VaccinationAndCertificate vac = vacAndCertService.getVaccinationAndCertificateByVaccinationIdAndVaccinationCertifficateId(item.getId(), vacCertService.getVacCertByUsername(tempUser).getId());
+
+            vaccinationCalendar.setDateFactVaccine(vac.getDateVaccination().toLocalDate());
+            vaccinationCalendar.setReaction(vac.getReaction());
+
+            vaccinationCalendarList.add(vaccinationCalendar);
+
+        }
+        }
+        catch (NullPointerException e){
+            System.out.println(e.getStackTrace());
+        }
+        model.addAttribute("vaccinations", vaccination);
+        model.addAttribute("disabled", false);
+    }
+
+
+        model.addAttribute("lastnameInputTemp", lastnameInput);
+        model.addAttribute("firstnameInputTemp", firstnameInput);
+        model.addAttribute("patronymicInputTemp", patronymicInput);
+        model.addAttribute("calendarInputTemp", calendarInput);
+
+//        lastnameInput = null;
+//        firstnameInput = null;
+//        patronymicInput = null;
+//        calendarInput = null;
+
+
+        model.addAttribute("users", vaccinationCalendarList);
+
+        model.addAttribute("schoolClasses", schoolClass);
+
+
+        return "adminVaccinationCalendar"; // This is the Thymeleaf template name
+    }
+
+    @GetMapping("/adminForm/adminVaccinationCalendarFilter_temp")
+    public String getAdminCalendarFilter(Model model, Authentication authentication) {
+
+        return "adminVaccinationCalendar"; // This is the Thymeleaf template name
+    }
+
+    @PostMapping("/adminForm/editStudentsFilter")
+    public String successfulRecord(@RequestParam("schoolClassFilter") String schoolClassFilter,
+                                   @RequestParam("lastnameInput") String lastnameInput,
+                                   @RequestParam("firstnameInput") String firstnameInput,
+                                   @RequestParam("patronymicInput") String patronymicInput,
+                                   @RequestParam("calendarInput") String calendarInput,
+                                   Authentication authentication) {
+
+            tempUser = userService.getByLastnameAndAndFirstnameAndPatronymicAndBirthdayAndSchoolClassName(
+                    lastnameInput, firstnameInput, patronymicInput, Date.valueOf(calendarInput), schoolClassFilter);
+
+            this.lastnameInput = lastnameInput;
+            this.firstnameInput = firstnameInput;
+            this.patronymicInput = patronymicInput;
+            this.calendarInput = calendarInput;
+
+
+            return "redirect:/adminForm/adminVaccinationCalendar_temp";
+    }
+
+    @PostMapping("/adminForm/editStudentsSaveVac")
+    public String adminVaccinationCalendarSaveVac(@RequestParam("selectNameVaccination") String selectNameVaccination,
+                                                  @RequestParam("facticalVaccination") String facticalVaccination,
+                                                  @RequestParam("reaction") String reaction,
+                                                  Authentication authentication) {
+
+        this.selectNameVaccination = selectNameVaccination;
+        this.facticalVaccination = facticalVaccination;
+        this.reaction = reaction;
+
+        return "redirect:/adminForm/editStudentsSaveVac_temp";
+    }
+
+    @GetMapping("/adminForm/editStudentsSaveVac_temp")
+    public String getAdminCalendarSaveVacTemp(Model model, Authentication authentication) {
+
+        Vaccination vaccination = vaccinationService.getVaccinationByName(selectNameVaccination);
+
+        if(vaccination != null){
+            if (Date.valueOf(facticalVaccination).compareTo(tempUser.getBirthday()) > 0)
+            {
+            vacAndCertService.saveVaccinationAndCertificate(
+                        vaccination,
+                        vacCertService.getVacCertByUsername(tempUser),
+                        facticalVaccination,
+                        reaction);
+            }
+        }
+
+        return "redirect:/adminForm/adminVaccinationCalendar_temp";
     }
 
 }

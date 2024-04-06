@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь прививок</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        #footer {
+            background-color: #333;
+            color: white;
+            font-size: 18px;
+            padding: 10px;
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #footer img {
+            height: 30px;
+            margin-right: 10px;
+        }
+
+
+        #content {
+            margin-top: 60px;
+            padding: 20px;
+            margin-bottom: 60px;
+        }
+
+        .contact-info {
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333;
+            color: white;
+        }
+
+        caption {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #saveBtn {
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #333;
+        }
+
+        input {
+            padding: 8px;
+            margin-bottom: 10px;
+            width: 100%;
+            border: 1px solid #333;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <form th:action="@{/studentForm}" method="get">
+        <input type="submit" value="Назад"/>
+    </form>
+
+    <form th:action="@{/logout}" method="post">
+        <input type="submit" value="Выйти"/>
+    </form>
+</header>
+
+<div id="content">
+    <div id="table">
+        <div class="contact-info" id="divTable">
+            <table border="1" id="myTable">
+                <caption><b>Список сделанных прививок</b></caption>
+                <tr>
+                    <th>Фамилия</th>
+                    <th>Имя</th>
+                    <th>Отчество</th>
+                    <th>Дата рождения</th>
+                    <th>Учебный класс</th>
+                    <th>Прививка</th>
+                    <th>Дата запланированной вакцинации</th>
+                    <th>Дата фактической вакцинации</th>
+                    <th>Реакция</th>
+                </tr>
+                <tr th:each="user : ${users}" th:class="${user.highlighted}">
+                    <td th:text="${user.lastname}"></td>
+                    <td th:text="${user.firstname}"></td>
+                    <td th:text="${user.patronymic}"></td>
+                    <td th:text="${user.birthday}"></td>
+                    <td th:text="${user.schoolClassName}"></td>
+                    <td th:text="${user.vacName}"></td>
+                    <td th:text="${user.datePlanVaccine}"></td>
+                    <td th:text="${user.dateFactVaccine}"></td>
+                    <td th:text="${user.reaction}"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<div id="content">
+    <button id="saveBtn">Сохранить в JSON</button>
+</div>
+
+
+    <footer id="footer">
+        <p>Адрес: ул. Московская, д. 39, г. Киров</p>
+        <p>Телефон: +7 (800) 555-35-35</p>
+        <p>Почта: asd22c@bk.ru</p>
+        <p>Название компании: Алексей Интертеймент</p>
+        <p>ИНН: 1234567890</p>
+        <img th:src="@{/logo.png}" alt="Логотип компании">
+    </footer>
+
+
+<script>
+    document.getElementById('saveBtn').addEventListener('click', function() {
+        var table = document.getElementById('myTable');
+        var data = [];
+        var headers = [];
+
+        // Получаем заголовки таблицы
+        for (var i = 0; i < table.rows[0].cells.length; i++) {
+            headers[i] = table.rows[0].cells[i].innerHTML.toLowerCase().replace(/ /gi, '');
+        }
+
+        // Перебираем строки и ячейки таблицы
+        for (var i = 1; i < table.rows.length; i++) {
+            var rowData = {};
+            for (var j = 0; j < table.rows[i].cells.length; j++) {
+                rowData[headers[j]] = table.rows[i].cells[j].innerHTML;
+            }
+            data.push(rowData);
+        }
+
+        // Преобразуем данные в JSON
+        var jsonData = JSON.stringify(data);
+
+        // Создаем объект Blob
+        var blob = new Blob([jsonData], { type: 'application/json' });
+
+        // Создаем ссылку для скачивания JSON
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'table_data.json';
+        a.click();
+    });
+
+</script>
+</body>
+</html>

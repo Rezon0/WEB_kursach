@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Select</title>
+</head>
+<body>
+
+<select id="select1" th:onchange="|updateSelect2(this.value)|">
+  <option value="option1">Option 1</option>
+  <option value="option2">Option 2</option>
+  <option value="option3">Option 3</option>
+</select>
+
+<select id="select2">
+  <!-- Options will be dynamically added here -->
+</select>
+
+<script th:inline="javascript">
+  function updateSelect2(value) {
+    var select2 = document.getElementById('select2');
+
+    // Clear previous options
+    select2.innerHTML = '';
+
+    // Add options based on selection in select1
+    if (value === 'option1') {
+      select2.add(new Option('Option 1 - A', 'option1_a'));
+      select2.add(new Option('Option 1 - B', 'option1_b'));
+      select2.add(new Option('Option 1 - C', 'option1_c'));
+    } else if (value === 'option2') {
+      select2.add(new Option('Option 2 - X', 'option2_x'));
+      select2.add(new Option('Option 2 - Y', 'option2_y'));
+      select2.add(new Option('Option 2 - Z', 'option2_z'));
+    } else if (value === 'option3') {
+      select2.add(new Option('Option 3 - P', 'option3_p'));
+      select2.add(new Option('Option 3 - Q', 'option3_q'));
+      select2.add(new Option('Option 3 - R', 'option3_r'));
+    }
+  }
+</script>
+
+</body>
+</html>

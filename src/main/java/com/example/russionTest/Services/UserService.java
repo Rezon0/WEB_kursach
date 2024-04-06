@@ -1,7 +1,7 @@
 package com.example.russionTest.Services;
 
 import com.example.russionTest.domain.User;
-import com.example.russionTest.domain.Authority;
+import com.example.russionTest.domain.VaccinationAndCertificate;
 import com.example.russionTest.repos.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -9,6 +9,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -26,6 +28,12 @@ public class UserService {
         if (user == null) throw  new UsernameNotFoundException(username);
         return user;
     }
+
+//    public User getUserByUserName(String username) {
+//        User user = userRepository.findByusername(username);
+//        if (user == null) throw  new UsernameNotFoundException(username);
+//        return user;
+//    }
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -54,5 +62,9 @@ public class UserService {
         String encr = passwordEncoder.encode(user.getPassword());
         user.setPassword(encr);
         userRepository.save(user);
+    }
+
+    public User getByLastnameAndAndFirstnameAndPatronymicAndBirthdayAndSchoolClassName(String lastname, String firstname, String patronymic, Date birthday, String schoolClassName) {
+        return userRepository.findByLastnameAndAndFirstnameAndPatronymicAndBirthdayAndSchoolClassName(lastname, firstname, patronymic, birthday, schoolClassName);
     }
 }
